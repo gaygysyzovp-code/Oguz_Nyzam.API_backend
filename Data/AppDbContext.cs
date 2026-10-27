@@ -23,16 +23,38 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
+        modelBuilder.Entity<AttendanceRecord>()
+            .HasOne(ar => ar.Group)
+            .WithMany()
+            .HasForeignKey(ar => ar.GroupId)
+            .OnDelete(DeleteBehavior.Restrict);
+        
+        modelBuilder.Entity<AttendanceRecord>()
+            .HasOne(ar => ar.User)
+            .WithMany()
+            .HasForeignKey(ar => ar.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<AttendanceRecord>()
+            .HasIndex(ar => new { ar.GroupId, ar.Date })
+            .IsUnique();
+
         modelBuilder.Entity<AttendanceDetail>()
             .HasOne(d => d.AttendanceRecord)
             .WithMany(r => r.Details)
             .HasForeignKey(d => d.AttendanceRecordId)
             .OnDelete(DeleteBehavior.Cascade);
-
+        
         modelBuilder.Entity<AttendanceDetail>()
             .HasOne(d => d.Student)
             .WithMany()
             .HasForeignKey(d => d.StudentId)
+            .OnDelete(DeleteBehavior.Restrict);
+        
+        modelBuilder.Entity<AttendanceDetail>()
+            .HasOne(d => d.ViolationCategory)
+            .WithMany()
+            .HasForeignKey(d => d.ViolationCategoryId)
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<Role>().HasData(

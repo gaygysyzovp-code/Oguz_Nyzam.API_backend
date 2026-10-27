@@ -1,0 +1,12 @@
+Admin_token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjNhMjRlMDBiLTBiYmItNGNkYS05Y2NkLWM3ZDY5Y2FjNGFkNCIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJQYWx2YW4gR2F5Z3lzeXpvdiIsIkZhY3VsdHlJZCI6IjEiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiIxIiwiZXhwIjoxNzk0MDQxMDM0LCJpc3MiOiJPZ3V6Tnl6YW1BUEkiLCJhdWQiOiJPZ3V6Tnl6YW1DbGllbnQifQ.iNTZRPp8UM9yEiK14uYr7RuSEvQUtlRC_QaP8p2QdqU"
+Dean_token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6ImIxYjVjYTU2LWM2ZTYtNDA2Zi05YTU3LWIwN2FkOWRkMGMxMCIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJLZXJpbSBSeXpheWV3IiwiRmFjdWx0eUlkIjoiMSIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IjIiLCJleHAiOjE3OTQwNDMyMzUsImlzcyI6Ik9ndXpOeXphbUFQSSIsImF1ZCI6Ik9ndXpOeXphbUNsaWVudCJ9.KJoPkd6D7STK1mvWnB_Ml8Ikv6IHnRYCuPDisVv-Sf0"
+
+GET /api/attendances?date=... — Bellenen bir senedäki ähli tassyklanan gatnaşyk we düzgün bozma maglumatlaryny getirmek.
+
+GET /api/attendances/range?startDate=...&endDate=... — Belli bir sene aralygyndaky ähli gatnaşyklary we statistikalary getirmek.
+
+GET /api/attendances/group/{groupId}/summary?startDate=...&endDate=... — Belli bir toparyň görkezilen sene aralygyndaky hasabatyny we kategoriýa statistikany getirmek.
+
+GET /api/attendances/student/{studentId}/stats?startDate=...&endDate=... — Belli bir talybyň özüne ýörite sene aralygyndaky statistikasyny getirmek.
+
+GET /api/attendances/violations?date=...&categoryId=... — Düzgün bozmalaryň görnüşine (kategoriýasyna) we senede görä filtrlenen sanawyny getirmek.

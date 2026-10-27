@@ -9,7 +9,6 @@ public class User
     public string PasswordHash { get; set; } = string.Empty;
 
     public int? RoleId { get; set; }
-
     public Role Role { get; set; } = null!;
 
     public int FacultyId { get; set; }

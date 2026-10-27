@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Oguz_Nyzam.API.Entities;
 using Oguz_Nyzam.API.Data;
 using Oguz_Nyzam.API.DTOs;
-using Oguz_Nyzam.API.Entities;
 
 namespace Oguz_Nyzam.API.Controllers;
 
@@ -11,37 +12,58 @@ namespace Oguz_Nyzam.API.Controllers;
 public class StudentsController : ControllerBase
 {
     private readonly AppDbContext _context;
-
     public StudentsController(AppDbContext context)
     {
         _context = context;
     }
 
-    [HttpGet("group/{groupId}")]
-    public async Task<ActionResult<IEnumerable<StudentDto>>> GetStudentByGroup(int groupId)
+    [HttpGet]
+    [Authorize(Roles = "1,2,3")]
+    public async Task<ActionResult<IEnumerable<StudentDto>>> GetStudents([FromQuery] int groupId)
     {
+        var group = await _context.Groups
+            .Include(g => g.Course)
+                .ThenInclude(c => c.Faculty)
+            .FirstOrDefaultAsync(g => g.Id == groupId);
+        
+        if (group == null)
+            return NotFound(new { message = "Gorkezilen Group tapylmady." });
+
+        var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+        if (userRole != "1")
+        {
+            var facultyIdClaim = User.FindFirst("FacultyId")?.Value;
+            if (string.IsNullOrEmpty(facultyIdClaim) || !int.TryParse(facultyIdClaim, out int userFacultyId))
+                {
+                    return BadRequest(new { message = "User'in fakulteti tapylmady." });
+                }
+            
+            if (group.Course == null || group.Course.FacultyId != userFacultyId)
+            {
+                return Forbid();
+            }
+        }
+
         var students = await _context.Students
-            .Include(s => s.Group)
             .Where(s => s.GroupId == groupId)
             .Select(s => new StudentDto
             {
                 Id = s.Id,
                 FullName = s.FullName,
                 StudentId = s.StudentId,
-                GroupId = s.GroupId,
-                GroupNumber = s.Group.GroupNumber
+                GroupNumber = group.GroupNumber,
+                CourseNumber = group.Course.CourseNumber,
+                FacultyName = group.Course.Faculty.Name
             }).ToListAsync();
         
         return Ok(students);
     }
 
     [HttpPost]
-    public async Task<ActionResult<StudentDto>> CreateStudent(CreateStudentDto dto)
+    [Authorize(Roles = "1")]
+    public async Task<ActionResult<StudentDto>> CreateStudent([FromBody] CreateStudentDto dto)
     {
-        var group = await _context.Groups.FindAsync(dto.GroupId);
-        if (group == null) 
-            return NotFound("Gorkezilen topar bazada yok.");
-        
         var student = new Student
         {
             Id = Guid.NewGuid(),
@@ -53,27 +75,32 @@ public class StudentsController : ControllerBase
         _context.Students.Add(student);
         await _context.SaveChangesAsync();
 
-        return Ok(new StudentDto
+        var group = await _context.Groups
+            .Include(g => g.Course)
+                .ThenInclude(c => c.Faculty)
+            .FirstOrDefaultAsync(g => g.Id == student.GroupId);
+
+        var result = new StudentDto
         {
             Id = student.Id,
             FullName = student.FullName,
             StudentId = student.StudentId,
-            GroupId = student.GroupId,
-            GroupNumber = group.GroupNumber
-        });
+            GroupNumber = group != null ? group.GroupNumber : 0,
+            CourseNumber = (group != null && group.Course != null) ? group.Course.CourseNumber : string.Empty,
+            FacultyName = (group != null && group.Course != null && group.Course.Faculty != null) ? group.Course.Faculty.Name : string.Empty
+        };
+
+        return StatusCode(201, result);
     }
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateStudent(Guid id, UpdateStudentDto dto)
+    [HttpPut("{id:guid}")]
+    [Authorize(Roles = "1")]
+    public async Task<IActionResult> UpdateStudent([FromRoute] Guid id, [FromBody] CreateStudentDto dto)
     {
         var student = await _context.Students.FindAsync(id);
         if (student == null)
-            return NotFound("Talyp tapylmady.");
+            return NotFound(new { message = "Student tapylmady." });
         
-        var group = await _context.Groups.FindAsync(dto.GroupId);
-        if (group == null)
-            return NotFound("Gorkezen toparnyz tapylmady.");
-
         student.FullName = dto.FullName;
         student.StudentId = dto.StudentId;
         student.GroupId = dto.GroupId;
@@ -83,16 +110,17 @@ public class StudentsController : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteStudent(Guid id)
+    [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "1")]
+    public async Task<IActionResult> DeleteStudent([FromRoute] Guid id)
     {
         var student = await _context.Students.FindAsync(id);
         if (student == null)
-            return NotFound("Talyp tapylmady.");
+            return NotFound(new { message = "Student tapylmady." });
         
         _context.Students.Remove(student);
         await _context.SaveChangesAsync();
 
-        return NoContent();
+        return Ok(new { message = "Student ustunlikli pozuldy." });
     }
 }

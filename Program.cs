@@ -1,13 +1,22 @@
-using Microsoft.EntityFrameworkCore;
-using Oguz_Nyzam.API.Data;
-
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Oguz_Nyzam.API.Data;
+using Oguz_Nyzam.API.Services;
+using Oguz_Nyzam.API.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddScoped<JwtService>();
+
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var secretKey = jwtSettings["Key"];
 
 builder.Services.AddAuthentication(options =>
 {
@@ -18,38 +27,45 @@ builder.Services.AddAuthentication(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
     {
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes("OGUZ_NYZAM_SUPER_GIZLIN_ACARY_123456_VERY_SECRET_KEY")), 
-        ValidateIssuer = false,
-        ValidateAudience = false,
+        ValidateIssuer = true,
+        ValidateAudience = true,
         ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey!))
     };
 });
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+using (var scope = app.Services.CreateScope())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(); 
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+    await context.Database.MigrateAsync();
+
+    if (!await context.Users.AnyAsync(u => u.RoleId == 1))
+    {
+        var adminUser = new User
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Palvan Gaygysyzov",
+            PasswordHash = "_palvan",
+            RoleId = 1,
+            FacultyId = 1
+        };
+
+        context.Users.Add(adminUser);
+        await context.SaveChangesAsync();
+    }
 }
 
 app.UseHttpsRedirection();
 
-app.UseRouting();
-
 app.UseAuthentication();
-
 app.UseAuthorization();
 
-app.MapControllers(); 
+app.MapControllers();
 
 app.Run();

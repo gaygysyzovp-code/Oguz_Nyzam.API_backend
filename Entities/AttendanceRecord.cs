@@ -9,8 +9,8 @@ public class AttendanceRecord
     public int GroupId { get; set; }
     public Group Group { get; set; } = null!;
 
-    public Guid TeacherId { get; set; }
-    public User Teacher { get; set; } = null!;
+    public Guid UserId { get; set; }
+    public User User { get; set; } = null!;
 
     public bool IsSubmitted { get; set; } = false;
 
